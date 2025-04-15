@@ -4,6 +4,7 @@
   "description": "mbox to pdf, with attachments",
   "main": "index.js",
   "scripts": {
+    "build": "tsc --build tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/pascal-brand38/mbox-to-pdf/issues"
   },
-  "homepage": "https://github.com/pascal-brand38/mbox-to-pdf#readme"
+  "homepage": "https://github.com/pascal-brand38/mbox-to-pdf#readme",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
 }
