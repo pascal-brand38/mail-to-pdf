@@ -8,14 +8,78 @@ import * as fs from 'fs'
 // @ts-ignore
 import { mboxReader } from 'mbox-reader'  // scan messages
 
-import { simpleParser } from 'mailparser' // parse a single message
+import { simpleParser, ParsedMail, HeaderValue, AddressObject } from 'mailparser' // parse a single message
 import puppeteer from "puppeteer"       // save html text as pdf
 
 const mboxPath = 'C:/tmp/mbox-to-pdf/INBOX'
 const outputDir = 'C:/tmp/mbox-to-pdf/output'
 
 
-const readStream = fs.createReadStream(mboxPath);
+const readStream = fs.createReadStream(mboxPath)
+
+function escape(s: string): string {
+  return s.replace(
+      /[^0-9A-Za-z ]/g,
+      c => "&#" + c.charCodeAt(0) + ";"
+  );
+}
+
+
+function getHtml(parser: ParsedMail): string {
+  let fromStr = ''
+  let toStr = ''
+  let ccStr = ''
+  let bccStr = ''
+  let body = ''
+  let subjectStr = ''
+  let dateStr = ''
+  if (parser.headers) {
+    console.log(parser.headers)
+    const from = parser.headers.get('from')
+    if (from) {
+      fromStr = (from as AddressObject).text
+    }
+    const to = parser.headers.get('to')
+    if (to) {
+      toStr = (to as AddressObject).text
+    }
+    const cc = parser.headers.get('cc')
+    if (cc) {
+      ccStr = (cc as AddressObject).text
+    }
+    const bcc = parser.headers.get('bcc')
+    if (bcc) {
+      bccStr = (bcc as AddressObject).text
+    }
+    const subject = parser.headers.get('subject')
+    if (subject) {
+      subjectStr = (subject as string)
+    }
+    const date = parser.headers.get('date')
+    if (date) {
+      dateStr = (date as Date).toLocaleString()
+    }
+
+  }
+  if (parser.html) {
+    body = parser.html
+  }
+
+  let html = ''
+  html += `<div style="background-color:lightgrey;">`
+  html += '<div><br></div>'
+  html += `<div><strong>From:</strong> ${escape(fromStr)}</div>`
+  html += `<div><strong>To:</strong> ${escape(toStr)}</div>`
+  html += `<div><strong>Cc:</strong> ${escape(ccStr)}</div>`
+  html += `<div><strong>Bcc:</strong> ${escape(bccStr)}</div>`
+  html += `<div><strong>Subject:</strong> ${escape(subjectStr)}</div>`
+  html += `<div><strong>Date:</strong> ${escape(dateStr)}</div>`
+  html += '<div><br></div>'
+  html += `</div>`
+  html += '<div><br></div>'
+  html += body
+  return html
+}
 
 
 for await (let message of mboxReader(readStream)) {
@@ -46,26 +110,16 @@ for await (let message of mboxReader(readStream)) {
     }
   })
 
-  // console.log(parser.html)
-  // if (true || parser.html) {
-  //     const doc = new jsPDF();
-  //     // doc.text(parser.html, 10, 10);
-  //     const pdf = await doc.html("<h1>Hello, jsPDF!</h1>")
-  //     //await pdf.save(outputDir + `/body.pdf`);
-  // } else {
-  //     //throw 'ERROR PASCAL'
-  // }
-
-  console.log(`parser.html = ${parser.html}`)
+  // console.log(`parser.html = ${parser.html}`)
 
   if (parser.html) {
-    console.log(parser.headers)
+    // console.log(parser.headers)
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     //set the HTML of this page
-    await page.setContent(parser.html);
+    await page.setContent(getHtml(parser));
     //save the page into a PDF and call it 'puppeteer-example.pdf'
-    await page.pdf({ path: outputDir + `/body.pdf` });
+    await page.pdf({ path: outputDir + `/body.pdf`, printBackground: true });
     //when, everything's done, close the browser instance.
     await browser.close();
     break
@@ -78,3 +132,4 @@ console.log('DONE')
 
 // TODO
 // - eml is attached => no filename of the attachment, and the real attachment is in the eml that is attached
+// - add link to attachment in the body.pdf
