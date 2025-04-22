@@ -24,60 +24,71 @@ function escape(s: string): string {
   );
 }
 
+function getMailBaseName(parser: ParsedMail): string {
+  return ''
+}
+
+function getHeader(parser: ParsedMail) {
+  const header = {
+    from: '',
+    to: '',
+    cc: '',
+    bcc: '',
+    subject: '',
+    date: '',
+  }
+
+  const from = parser.headers.get('from')
+  if (from) {
+    header.from = (from as AddressObject).text
+  }
+  const to = parser.headers.get('to')
+  if (to) {
+    header.to = (to as AddressObject).text
+  }
+  const cc = parser.headers.get('cc')
+  if (cc) {
+    header.cc = (cc as AddressObject).text
+  }
+  const bcc = parser.headers.get('bcc')
+  if (bcc) {
+    header.bcc = (bcc as AddressObject).text
+  }
+  const subject = parser.headers.get('subject')
+  if (subject) {
+    header.subject = (subject as string)
+  }
+  const date = parser.headers.get('date')
+  if (date) {
+    header.date = (date as Date).toLocaleString()
+  }
+
+  return header
+}
+
 
 function getHtml(parser: ParsedMail): string {
-  let fromStr = ''
-  let toStr = ''
-  let ccStr = ''
-  let bccStr = ''
-  let body = ''
-  let subjectStr = ''
-  let dateStr = ''
-  if (parser.headers) {
-    console.log(parser.headers)
-    const from = parser.headers.get('from')
-    if (from) {
-      fromStr = (from as AddressObject).text
-    }
-    const to = parser.headers.get('to')
-    if (to) {
-      toStr = (to as AddressObject).text
-    }
-    const cc = parser.headers.get('cc')
-    if (cc) {
-      ccStr = (cc as AddressObject).text
-    }
-    const bcc = parser.headers.get('bcc')
-    if (bcc) {
-      bccStr = (bcc as AddressObject).text
-    }
-    const subject = parser.headers.get('subject')
-    if (subject) {
-      subjectStr = (subject as string)
-    }
-    const date = parser.headers.get('date')
-    if (date) {
-      dateStr = (date as Date).toLocaleString()
-    }
-
-  }
+  let bodyStr = ''
   if (parser.html) {
-    body = parser.html
+    bodyStr = parser.html
   }
+  const header = getHeader(parser)
 
   let html = ''
   html += `<div style="background-color:lightgrey;">`
   html += '<div><br></div>'
-  html += `<div><strong>From:</strong> ${escape(fromStr)}</div>`
-  html += `<div><strong>To:</strong> ${escape(toStr)}</div>`
-  html += `<div><strong>Cc:</strong> ${escape(ccStr)}</div>`
-  html += `<div><strong>Bcc:</strong> ${escape(bccStr)}</div>`
-  html += `<div><strong>Subject:</strong> ${escape(subjectStr)}</div>`
-  html += `<div><strong>Date:</strong> ${escape(dateStr)}</div>`
+  html += '<div><em>Generated using https://npmjs.com/package/mbox-to-pdf</em></div>'
+  html += '<div><br></div>'
+  html += `<div><strong>From:</strong> ${escape(header.from)}</div>`
+  html += `<div><strong>To:</strong> ${escape(header.to)}</div>`
+  html += `<div><strong>Cc:</strong> ${escape(header.cc)}</div>`
+  html += `<div><strong>Bcc:</strong> ${escape(header.bcc)}</div>`
+  html += `<div><strong>Subject:</strong> ${escape(header.subject)}</div>`
+  html += `<div><strong>Date:</strong> ${escape(header.date)}</div>`
   html += '<div><br></div>'
   html += `</div>`
   html += '<div><br></div>'
-  html += body
+  html += bodyStr
   return html
 }
 
@@ -85,20 +96,9 @@ function getHtml(parser: ParsedMail): string {
 for await (let message of mboxReader(readStream)) {
   console.log(message.returnPath);
   console.log(message.time);
-  //process.stdout.write(message.content);
-  // console.log(message.content)
-
-  const str = await new Response(message.content).text();
-  // console.log(str)
 
   const parser = await simpleParser(message.content);
-  //console.log(parser)
-  console.log('---------------------')
-  // console.log(parser.from)
-  // console.log(parser.date)
-  // console.log(parser.subject)
-  // console.log(parser.attachments)
-  // console.log(parser.text)
+//  const mailBasename = getMailBaseName(parser)
 
   parser.attachments.forEach((attachment, index) => {
     console.log(attachment.filename)
