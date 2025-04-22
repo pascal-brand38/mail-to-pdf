@@ -22,7 +22,8 @@
   "homepage": "https://github.com/pascal-brand38/mbox-to-pdf#readme",
   "dependencies": {
     "mailparser": "^3.7.2",
-    "mbox-reader": "^1.2.0"
+    "mbox-reader": "^1.2.0",
+    "puppeteer": "^24.7.0"
   },
   "devDependencies": {
     "@types/mailparser": "^3.4.5",

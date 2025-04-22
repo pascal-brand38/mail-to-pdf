@@ -9,6 +9,9 @@ import {simpleParser} from 'mailparser'
 // @ts-ignore
 import {mboxReader} from 'mbox-reader'
 
+import puppeteer from "puppeteer";
+
+
 const mboxPath = 'C:/tmp/mbox-to-pdf/INBOX'
 const outputDir = 'C:/tmp/mbox-to-pdf/output'
 
@@ -31,10 +34,10 @@ for await (let message of mboxReader(readStream)) {
     const parser = await simpleParser(message.content);
     //console.log(parser)
     console.log('---------------------')
-    console.log(parser.from)
-    console.log(parser.date)
-    console.log(parser.subject)
-    console.log(parser.attachments)
+    // console.log(parser.from)
+    // console.log(parser.date)
+    // console.log(parser.subject)
+    // console.log(parser.attachments)
     // console.log(parser.text)
 
     parser.attachments.forEach((attachment, index) => {
@@ -47,7 +50,30 @@ for await (let message of mboxReader(readStream)) {
         }
     })
 
-//    break
+    // console.log(parser.html)
+    // if (true || parser.html) {
+    //     const doc = new jsPDF();
+    //     // doc.text(parser.html, 10, 10);
+    //     const pdf = await doc.html("<h1>Hello, jsPDF!</h1>")
+    //     //await pdf.save(outputDir + `/body.pdf`);
+    // } else {
+    //     //throw 'ERROR PASCAL'
+    // }
+
+    console.log(`parser.html = ${parser.html}`)
+
+    if (parser.html) {
+        console.log(parser.headers)
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        //set the HTML of this page
+        await page.setContent(parser.html);
+        //save the page into a PDF and call it 'puppeteer-example.pdf'
+        await page.pdf({ path: outputDir + `/body.pdf` });
+        //when, everything's done, close the browser instance.
+        await browser.close();
+    break
+    }
 }
 
 
