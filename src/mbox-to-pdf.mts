@@ -10,8 +10,8 @@ import * as path from 'path'
 import { mboxReader } from 'mbox-reader'  // scan messages
 
 import { simpleParser, ParsedMail, HeaderValue, AddressObject } from 'mailparser' // parse a single message
-import puppeteer from "puppeteer"       // save html text as pdf
-import { Path } from 'git-filter-repo'
+import puppeteer, { Browser } from "puppeteer"       // save html text as pdf
+import { PDFDocument } from 'pdf-lib'
 
 const mboxPath = 'C:/tmp/mbox-to-pdf/INBOX'
 const outputDir = 'C:/tmp/mbox-to-pdf/output'
@@ -80,16 +80,17 @@ function getHeader(parser: ParsedMail): Header {
   return header
 }
 
-async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string) {
-  const browser = await puppeteer.launch();
+
+async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
+  const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
   const page = await browser.newPage();
-  //set the HTML of this page
-  await page.setContent(getHtml(parser, header));
-  //save the page into a PDF and call it 'puppeteer-example.pdf'
-  await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
-  await browser.close();
+  await page.setContent(getHtml(parser, header));   //set the HTML of this page
+  await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
 
+  let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
+  const pdfBuf = await pdf.save()
+  fs.writeFileSync(pdfFullName, pdfBuf);
 }
 
 function getHtml(parser: ParsedMail, header: Header): string {
@@ -103,12 +104,12 @@ function getHtml(parser: ParsedMail, header: Header): string {
   html += '<div><br></div>'
   html += '<div><em>Generated using https://npmjs.com/package/mbox-to-pdf</em></div>'
   html += '<div><br></div>'
-  html += `<div><strong>From:</strong> ${escape(header.from)}</div>`
-  html += `<div><strong>To:</strong> ${escape(header.to)}</div>`
-  html += `<div><strong>Cc:</strong> ${escape(header.cc)}</div>`
-  html += `<div><strong>Bcc:</strong> ${escape(header.bcc)}</div>`
-  html += `<div><strong>Subject:</strong> ${escape(header.subject)}</div>`
-  html += `<div><strong>Date:</strong> ${escape(header.date)}</div>`
+  html += `<div>From: ${escape(header.from)}</div>`
+  html += `<div>To: ${escape(header.to)}</div>`
+  html += `<div>Cc: ${escape(header.cc)}</div>`
+  html += `<div>Bcc: ${escape(header.bcc)}</div>`
+  html += `<div>Subject: ${escape(header.subject)}</div>`
+  html += `<div>Date: ${escape(header.date)}</div>`
   html += '<div><br></div>'
   html += `</div>`
   html += '<div><br></div>'
@@ -116,6 +117,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
   return html
 }
 
+const browser = await puppeteer.launch();
 
 for await (let message of mboxReader(readStream)) {
   const parser = await simpleParser(message.content);
@@ -134,10 +136,11 @@ for await (let message of mboxReader(readStream)) {
   })
 
   if (parser.html) {
-    await saveUsingPuppeteer(parser, header, targetDir)
+    await saveUsingPuppeteer(parser, header, targetDir, browser)
   }
 }
 
+await browser.close();
 console.log('DONE')
 
 
