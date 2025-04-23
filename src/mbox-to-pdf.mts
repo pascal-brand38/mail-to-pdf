@@ -153,6 +153,8 @@ for await (let message of mboxReader(readStream)) {
   const parser = await simpleParser(message.content);
   const header = getHeader(parser)
 
+  console.log(`--- ${header.basename}`)
+
   const targetDir = path.join(outputDir, header.basename)
   fs.mkdirSync(targetDir, { recursive: true });
 
