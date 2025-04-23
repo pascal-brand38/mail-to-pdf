@@ -4,6 +4,7 @@
 // MIT License
 
 import * as fs from 'fs'
+import * as path from 'path'
 
 // @ts-ignore
 import { mboxReader } from 'mbox-reader'  // scan messages
@@ -24,11 +25,17 @@ function escape(s: string): string {
   );
 }
 
-function getMailBaseName(parser: ParsedMail): string {
-  return ''
+interface Header  {
+  from: string,
+  to: string,
+  cc: string,
+  bcc: string,
+  subject: string,
+  date: string,
+  basename: string,
 }
 
-function getHeader(parser: ParsedMail) {
+function getHeader(parser: ParsedMail): Header {
   const header = {
     from: '',
     to: '',
@@ -36,6 +43,7 @@ function getHeader(parser: ParsedMail) {
     bcc: '',
     subject: '',
     date: '',
+    basename: ''
   }
 
   const from = parser.headers.get('from')
@@ -54,25 +62,31 @@ function getHeader(parser: ParsedMail) {
   if (bcc) {
     header.bcc = (bcc as AddressObject).text
   }
+  const date = parser.headers.get('date')
+  if (date) {
+    const d: Date = (date as Date)
+    header.date = d.toLocaleString()
+    header.basename = `${d.getFullYear()}-${(d.getMonth()+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}-${d.getDate().toLocaleString(undefined, {minimumIntegerDigits: 2})}`
+    header.basename += `-${d.getHours().toLocaleString(undefined, {minimumIntegerDigits: 2})}.${d.getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2})}.${d.getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}`
+    console.log(header.date)
+  }
+
   const subject = parser.headers.get('subject')
   if (subject) {
     header.subject = (subject as string)
-  }
-  const date = parser.headers.get('date')
-  if (date) {
-    header.date = (date as Date).toLocaleString()
+    header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
+    console.log(header.basename)
   }
 
   return header
 }
 
 
-function getHtml(parser: ParsedMail): string {
+function getHtml(parser: ParsedMail, header: Header): string {
   let bodyStr = ''
   if (parser.html) {
     bodyStr = parser.html
   }
-  const header = getHeader(parser)
 
   let html = ''
   html += `<div style="background-color:lightgrey;">`
@@ -98,15 +112,18 @@ for await (let message of mboxReader(readStream)) {
   console.log(message.time);
 
   const parser = await simpleParser(message.content);
-//  const mailBasename = getMailBaseName(parser)
+  const header = getHeader(parser)
+
+  const targetDir = path.join(outputDir, header.basename)
+  fs.mkdirSync(targetDir, { recursive: true });
 
   parser.attachments.forEach((attachment, index) => {
     console.log(attachment.filename)
     if (attachment.filename) {
-      fs.writeFileSync(outputDir + '/' + attachment.filename, attachment.content);
+      fs.writeFileSync(path.join(targetDir, attachment.filename), attachment.content);
     } else {
-      fs.writeFileSync(outputDir + `/attach-${index}`, attachment.content);
-
+      fs.writeFileSync(path.join(targetDir, `/attach-${index}`), attachment.content);
+      console.log('ERROR:', header)
     }
   })
 
@@ -117,12 +134,11 @@ for await (let message of mboxReader(readStream)) {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     //set the HTML of this page
-    await page.setContent(getHtml(parser));
+    await page.setContent(getHtml(parser, header));
     //save the page into a PDF and call it 'puppeteer-example.pdf'
-    await page.pdf({ path: outputDir + `/body.pdf`, printBackground: true });
+    await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
     //when, everything's done, close the browser instance.
     await browser.close();
-    break
   }
 }
 
