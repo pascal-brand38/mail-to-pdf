@@ -107,6 +107,8 @@ function getHtml(parser: ParsedMail, header: Header): string {
 }
 
 
+const browser = await puppeteer.launch();
+
 for await (let message of mboxReader(readStream)) {
   console.log(message.returnPath);
   console.log(message.time);
@@ -131,18 +133,16 @@ for await (let message of mboxReader(readStream)) {
 
   if (parser.html) {
     // console.log(parser.headers)
-    const browser = await puppeteer.launch();
     const page = await browser.newPage();
     //set the HTML of this page
     await page.setContent(getHtml(parser, header));
     //save the page into a PDF and call it 'puppeteer-example.pdf'
     await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
     //when, everything's done, close the browser instance.
-    await browser.close();
   }
 }
 
-
+await browser.close();
 console.log('DONE')
 
 
