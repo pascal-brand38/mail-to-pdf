@@ -9,15 +9,10 @@ import * as path from 'path'
 // @ts-ignore
 import { mboxReader } from 'mbox-reader'  // scan messages
 
-import { simpleParser, ParsedMail, HeaderValue, AddressObject } from 'mailparser' // parse a single message
+import { simpleParser, ParsedMail, AddressObject } from 'mailparser' // parse a single message
 import puppeteer, { Browser } from "puppeteer"       // save html text as pdf
 import { PDFDocument } from 'pdf-lib'
 
-const mboxPath = 'C:/tmp/mbox-to-pdf/INBOX'
-const outputDir = 'C:/tmp/mbox-to-pdf/output'
-
-
-const readStream = fs.createReadStream(mboxPath)
 
 function escape(s: string): string {
   return s.replace(
@@ -76,6 +71,7 @@ function getHeader(parser: ParsedMail): Header {
     header.subject = (subject as string)
     header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
   }
+  header.basename = header.basename.trim()
 
   return header
 }
@@ -109,6 +105,8 @@ function getHtml(parser: ParsedMail, header: Header): string {
   let bodyStr = ''
   if (parser.html) {
     bodyStr = parser.html
+  } else if (parser.text) {
+    bodyStr = `<div>${parser.text.replaceAll('\n', '<br>')}</div>`
   }
 
   let html = ''
@@ -127,6 +125,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
   html += '<div><br></div>'
 
   html += bodyStr
+  html += '<div><br></div>'
 
   if (parser.attachments.length !== 0) {
     html += `<div style="background-color:lightgrey;">`
@@ -147,32 +146,39 @@ function getHtml(parser: ParsedMail, header: Header): string {
   return html
 }
 
-const browser = await puppeteer.launch();
 
-for await (let message of mboxReader(readStream)) {
-  const parser = await simpleParser(message.content);
-  const header = getHeader(parser)
+async function mboxToPdf(mboxPath: string, outputDir: string) {
+  const readStream = fs.createReadStream(mboxPath)
 
-  console.log(`--- ${header.basename}`)
+  const browser = await puppeteer.launch();
 
-  const targetDir = path.join(outputDir, header.basename)
-  fs.mkdirSync(targetDir, { recursive: true });
+  for await (let message of mboxReader(readStream)) {
+    const parser = await simpleParser(message.content);
+    const header = getHeader(parser)
 
-  parser.attachments.forEach((attachment, index) => {
-    if (attachment.filename) {
-      fs.writeFileSync(path.join(targetDir, attachment.filename), attachment.content);
-    } else {
-      fs.writeFileSync(path.join(targetDir, `/attach-${index}`), attachment.content);
-      console.log('ERROR:', header)
-    }
-  })
+    console.log(`--- ${header.basename}`)
 
-  if (parser.html) {
+    const targetDir = path.join(outputDir, header.basename)
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    parser.attachments.forEach((attachment, index) => {
+      if (attachment.filename) {
+        fs.writeFileSync(path.join(targetDir, attachment.filename), attachment.content);
+      } else {
+        fs.writeFileSync(path.join(targetDir, `/attach-${index}`), attachment.content);
+        console.log('ERROR:', header)
+      }
+    })
+
     await saveUsingPuppeteer(parser, header, targetDir, browser)
   }
+
+  await browser.close();
 }
 
-await browser.close();
+
+await mboxToPdf('C:/tmp/mbox-to-pdf/INBOX', 'C:/tmp/mbox-to-pdf/output')
+
 console.log('DONE')
 
 
