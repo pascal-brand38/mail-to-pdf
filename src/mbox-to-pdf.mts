@@ -93,6 +93,18 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
   fs.writeFileSync(pdfFullName, pdfBuf);
 }
 
+function beautifulSize(s: number) {
+  if (s < 1024) {
+    return `${s.toFixed(2)}Bytes`
+  } else if (s < 1024*1024) {
+    return `${(s/1024).toFixed(2)}KB`
+  } else if (s < 1024*1024*1024) {
+    return `${(s/(1024*1024)).toFixed(2)}MB`
+  } else {
+    return `${(s/(1024*1024*1024)).toFixed(2)}GB`
+  }
+}
+
 function getHtml(parser: ParsedMail, header: Header): string {
   let bodyStr = ''
   if (parser.html) {
@@ -113,7 +125,25 @@ function getHtml(parser: ParsedMail, header: Header): string {
   html += '<div><br></div>'
   html += `</div>`
   html += '<div><br></div>'
+
   html += bodyStr
+
+  if (parser.attachments.length !== 0) {
+    html += `<div style="background-color:lightgrey;">`
+    html += '<div><br></div>'
+    parser.attachments.forEach((attachment, index) => {
+      html += `<div>`
+      if (attachment.filename) {
+        html += `attachments: ${attachment.filename}`
+      } else {
+        html += `attachments: unknown`
+      }
+      html += ` ${beautifulSize(attachment.content.length)}`
+      html += `</div>`
+    })
+    html += '<div><br></div>'
+    html += `</div>`
+  }
   return html
 }
 
@@ -146,4 +176,3 @@ console.log('DONE')
 
 // TODO
 // - eml is attached => no filename of the attachment, and the real attachment is in the eml that is attached
-// - add link to attachment in the body.pdf
