@@ -68,14 +68,12 @@ function getHeader(parser: ParsedMail): Header {
     header.date = d.toLocaleString()
     header.basename = `${d.getFullYear()}-${(d.getMonth()+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}-${d.getDate().toLocaleString(undefined, {minimumIntegerDigits: 2})}`
     header.basename += `-${d.getHours().toLocaleString(undefined, {minimumIntegerDigits: 2})}.${d.getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2})}.${d.getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}`
-    console.log(header.date)
   }
 
   const subject = parser.headers.get('subject')
   if (subject) {
     header.subject = (subject as string)
     header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
-    console.log(header.basename)
   }
 
   return header
@@ -110,9 +108,6 @@ function getHtml(parser: ParsedMail, header: Header): string {
 const browser = await puppeteer.launch();
 
 for await (let message of mboxReader(readStream)) {
-  console.log(message.returnPath);
-  console.log(message.time);
-
   const parser = await simpleParser(message.content);
   const header = getHeader(parser)
 
@@ -120,7 +115,6 @@ for await (let message of mboxReader(readStream)) {
   fs.mkdirSync(targetDir, { recursive: true });
 
   parser.attachments.forEach((attachment, index) => {
-    console.log(attachment.filename)
     if (attachment.filename) {
       fs.writeFileSync(path.join(targetDir, attachment.filename), attachment.content);
     } else {
@@ -129,16 +123,12 @@ for await (let message of mboxReader(readStream)) {
     }
   })
 
-  // console.log(`parser.html = ${parser.html}`)
-
   if (parser.html) {
-    // console.log(parser.headers)
     const page = await browser.newPage();
     //set the HTML of this page
     await page.setContent(getHtml(parser, header));
     //save the page into a PDF and call it 'puppeteer-example.pdf'
     await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
-    //when, everything's done, close the browser instance.
   }
 }
 
