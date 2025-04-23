@@ -11,6 +11,7 @@ import { mboxReader } from 'mbox-reader'  // scan messages
 
 import { simpleParser, ParsedMail, HeaderValue, AddressObject } from 'mailparser' // parse a single message
 import puppeteer from "puppeteer"       // save html text as pdf
+import { Path } from 'git-filter-repo'
 
 const mboxPath = 'C:/tmp/mbox-to-pdf/INBOX'
 const outputDir = 'C:/tmp/mbox-to-pdf/output'
@@ -79,6 +80,17 @@ function getHeader(parser: ParsedMail): Header {
   return header
 }
 
+async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string) {
+  const browser = await puppeteer.launch();
+
+  const page = await browser.newPage();
+  //set the HTML of this page
+  await page.setContent(getHtml(parser, header));
+  //save the page into a PDF and call it 'puppeteer-example.pdf'
+  await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
+  await browser.close();
+
+}
 
 function getHtml(parser: ParsedMail, header: Header): string {
   let bodyStr = ''
@@ -105,8 +117,6 @@ function getHtml(parser: ParsedMail, header: Header): string {
 }
 
 
-const browser = await puppeteer.launch();
-
 for await (let message of mboxReader(readStream)) {
   const parser = await simpleParser(message.content);
   const header = getHeader(parser)
@@ -124,15 +134,10 @@ for await (let message of mboxReader(readStream)) {
   })
 
   if (parser.html) {
-    const page = await browser.newPage();
-    //set the HTML of this page
-    await page.setContent(getHtml(parser, header));
-    //save the page into a PDF and call it 'puppeteer-example.pdf'
-    await page.pdf({ path: path.join(targetDir, header.basename+'.pdf'), printBackground: true });
+    await saveUsingPuppeteer(parser, header, targetDir)
   }
 }
 
-await browser.close();
 console.log('DONE')
 
 
