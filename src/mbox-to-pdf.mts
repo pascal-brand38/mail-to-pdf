@@ -107,6 +107,9 @@ function getHtml(parser: ParsedMail, header: Header): string {
     bodyStr = parser.html
   } else if (parser.text) {
     bodyStr = `<div>${parser.text.replaceAll('\n', '<br>')}</div>`
+  } else if (parser.textAsHtml) {
+    bodyStr = parser.textAsHtml
+    console.log('ERROR - textAsHtml:', header)
   }
 
   let html = ''
@@ -156,18 +159,26 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
     const parser = await simpleParser(message.content);
     const header = getHeader(parser)
 
+    // console.log(parser)
+
     console.log(`--- ${header.basename}`)
 
     const targetDir = path.join(outputDir, header.basename)
     fs.mkdirSync(targetDir, { recursive: true });
 
     parser.attachments.forEach((attachment, index) => {
-      if (attachment.filename) {
-        fs.writeFileSync(path.join(targetDir, attachment.filename), attachment.content);
-      } else {
-        fs.writeFileSync(path.join(targetDir, `/attach-${index}`), attachment.content);
-        console.log('ERROR:', header)
+      let filename = attachment.filename
+      if (!filename &&  (attachment.contentType === 'message/rfc822')) {
+        console.log('EML as attachment: ', header)
+        filename = `/attachment-${index}.eml`
       }
+
+      if (!filename) {
+        console.log('ERROR attachment without filename: ', header)
+        filename = `/attachment-${index}.unknown`
+      }
+
+      fs.writeFileSync(path.join(targetDir, filename), attachment.content)
     })
 
     await saveUsingPuppeteer(parser, header, targetDir, browser)
