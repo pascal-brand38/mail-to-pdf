@@ -32,6 +32,10 @@ interface Header  {
   basename: string,
 }
 
+function fixFilename(filename: string) {
+  return  filename.replace(/[\:\\\/\*\?\"\<\>\|]/g, '').trim()
+}
+
 function getHeader(parser: ParsedMail): Header {
   const header = {
     from: '',
@@ -72,7 +76,7 @@ function getHeader(parser: ParsedMail): Header {
     header.subject = (subject as string)
     header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
   }
-  header.basename = header.basename.trim()
+  header.basename = fixFilename(header.basename)
 
   return header
 }
@@ -187,6 +191,7 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
         filename = `/attachment-${index}.unknown`
       }
 
+      filename = fixFilename(filename)
       fs.writeFileSync(path.join(targetDir, filename), attachment.content)
     })
 
