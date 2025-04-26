@@ -12,6 +12,7 @@ import { mboxReader } from 'mbox-reader'  // scan messages
 import { simpleParser, ParsedMail, AddressObject } from 'mailparser' // parse a single message
 import puppeteer, { Browser } from "puppeteer"       // save html text as pdf
 import { PDFDocument } from 'pdf-lib'
+import { exit } from 'process'
 
 
 function escape(s: string): string {
@@ -151,6 +152,9 @@ function getHtml(parser: ParsedMail, header: Header): string {
 
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
+  console.log(`Processing mbox file: ${mboxPath}`)
+  console.log(`Creating outputs in: ${outputDir}`)
+
   const readStream = fs.createReadStream(mboxPath)
 
   const browser = await puppeteer.launch();
@@ -172,9 +176,14 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
         console.log('EML as attachment: ', header)
         filename = `/attachment-${index}.eml`
       }
+      if (!filename &&  (attachment.contentType === 'application/pdf')) {
+        console.log('PDF as attachment: ', header)
+        filename = `/attachment-${index}.pdf`
+      }
 
       if (!filename) {
         console.log('ERROR attachment without filename: ', header)
+        console.log(`attachment.contentType = ${attachment.contentType}`)
         filename = `/attachment-${index}.unknown`
       }
 
@@ -187,11 +196,78 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
   await browser.close();
 }
 
+function getDirectories(source: string) {
+  try {
+    return fs.readdirSync(source, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name)
+  } catch {
+    return []
+  }
+}
 
-await mboxToPdf('C:/tmp/mbox-to-pdf/INBOX', 'C:/tmp/mbox-to-pdf/output')
+interface mboxDesc { name: string, subdir: string}
+function getMboxPaths(root: string, subdir: string = '.') {
+  let results: mboxDesc[] = []
+  const dir = path.join(root, subdir)
+  try {
+    const contents = fs.readdirSync(dir, { withFileTypes: true })
+    contents.forEach(c => {
+      if (c.isDirectory()) {
+        results = [ ...results, ...getMboxPaths(root, path.join(subdir, c.name))]
+      } else if (c.isFile()) {
+        if (!c.name.endsWith('.msf')) {
+          results.push({name: c.name, subdir: subdir})
+        }
+      }
+    })
+  } catch {
+    return []
+  }
+  return results
+}
+
+
+if (!process.env.APPDATA) {
+  throw '$APPDATA is not defined in the environment variables'
+}
+const thunderbirdProfileDir = path.join(process.env.APPDATA, 'Thunderbird', 'Profiles')
+const allThunderbirdProfiles = getDirectories(thunderbirdProfileDir)
+
+console.log(allThunderbirdProfiles)
+
+allThunderbirdProfiles.map(async (profileDir) =>{
+  const imapMailPath = path.join(thunderbirdProfileDir, profileDir, 'ImapMail')
+  // console.log(imapMailPath, getDirectories(imapMailPath))
+  // console.log(imapMailPath, getMboxPaths(imapMailPath))
+
+  // getMboxPaths(imapMailPath).map(async (desc) => {
+  //   // console.log(
+  //   //   path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
+  //   //   path.join(imapMailPath, desc.subdir, desc.name))
+  //   await mboxToPdf(
+  //     path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
+  //     path.join(imapMailPath, desc.subdir, desc.name))
+  // })
+
+  for await (let desc of getMboxPaths(imapMailPath)) {
+    // await new Promise(r => setTimeout(r, 10 * 1000)),
+    // console.log(
+    //   path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
+    //   path.join(imapMailPath, desc.subdir, desc.name))
+    await mboxToPdf(
+      path.join(imapMailPath, desc.subdir, desc.name),
+      path.join('C:/tmp/mbox-to-pdf/output', desc.subdir))
+  }
+})
+
+
+// await mboxToPdf('C:/tmp/mbox-to-pdf/INBOX', 'C:/tmp/mbox-to-pdf/output')
 
 console.log('DONE')
 
 
 // TODO
-// - eml is attached => no filename of the attachment, and the real attachment is in the eml that is attached
+// - remove 'Important' which are not duplicate (in case they do not have labels)
+// - remove 'Tous les messages' which are not duplicate (in case they do not have labels)
+// - 'Tous les message' may have another name in other language
