@@ -82,7 +82,7 @@ function getHeader(parser: ParsedMail): Header {
 }
 
 
-async function  saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
+async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
   const page = await browser.newPage();
@@ -179,6 +179,7 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
 }
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
+  let lenWhite = 3
   console.log(`Processing mbox file: ${mboxPath}`)
   console.log(`Creating outputs in: ${outputDir}`)
 
@@ -192,9 +193,21 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
     // console.log(parser)
 
-    console.log(`--- ${header.basename}`)
+    // console.log(`--- ${header.basename}`)
+    process.stdout.write(`${" ".repeat(lenWhite)}\r`)
+    lenWhite = 10 + header.basename.length
+    process.stdout.write(`--- ${header.basename}\r`)
+
 
     const targetDir = path.join(outputDir, header.basename)
+
+    // check if it already exists. If so, do not regenerate anything
+    // TODO: --force option
+    const pdfFullName = path.join(targetDir, header.basename+'.pdf')
+    if (fs.existsSync(pdfFullName)) {
+      continue
+    }
+
     fs.mkdirSync(targetDir, { recursive: true });
 
     parser.attachments.forEach((attachment, index) => {
