@@ -82,7 +82,7 @@ function getHeader(parser: ParsedMail): Header {
 }
 
 
-async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
+async function  saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
   const page = await browser.newPage();
@@ -91,6 +91,7 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
 
   let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
   const pdfBuf = await pdf.save()
+  await page.close()
   fs.writeFileSync(pdfFullName, pdfBuf);
 }
 
@@ -164,6 +165,10 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
     extension = 'jpg'
   } else if (contentType === 'image/png') {
     extension = 'png'
+  } else if (contentType === 'image/gif') {
+    extension = 'gif'
+  } else if (contentType === 'text/calendar') {
+    extension = 'ics'
   } else {
     extension = 'unknown'
     console.log('ERROR attachment without filename: ', header)
