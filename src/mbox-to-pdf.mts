@@ -154,6 +154,24 @@ function getHtml(parser: ParsedMail, header: Header): string {
   return html
 }
 
+function filenameFromContentType(contentType: string, index: number, header: Header) {
+  let extension = undefined
+  if (contentType === 'message/rfc822') {
+    extension = 'eml'
+  } else if (contentType === 'application/pdf') {
+    extension = 'pdf'
+  } else if (contentType === 'image/jpeg') {
+    extension = 'jpg'
+  } else if (contentType === 'image/png') {
+    extension = 'png'
+  } else {
+    extension = 'unknown'
+    console.log('ERROR attachment without filename: ', header)
+    console.log(`attachment.contentType = ${contentType}`)
+  }
+
+  return `attachment-${index}.${extension}`
+}
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
   console.log(`Processing mbox file: ${mboxPath}`)
@@ -176,21 +194,9 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
     parser.attachments.forEach((attachment, index) => {
       let filename = attachment.filename
-      if (!filename &&  (attachment.contentType === 'message/rfc822')) {
-        console.log('EML as attachment: ', header)
-        filename = `/attachment-${index}.eml`
-      }
-      if (!filename &&  (attachment.contentType === 'application/pdf')) {
-        console.log('PDF as attachment: ', header)
-        filename = `/attachment-${index}.pdf`
-      }
-
       if (!filename) {
-        console.log('ERROR attachment without filename: ', header)
-        console.log(`attachment.contentType = ${attachment.contentType}`)
-        filename = `/attachment-${index}.unknown`
+        filename = filenameFromContentType(attachment.contentType, index, header)
       }
-
       filename = fixFilename(filename)
       fs.writeFileSync(path.join(targetDir, filename), attachment.content)
     })
@@ -262,7 +268,7 @@ allThunderbirdProfiles.map(async (profileDir) =>{
     //   path.join(imapMailPath, desc.subdir, desc.name))
     await mboxToPdf(
       path.join(imapMailPath, desc.subdir, desc.name),
-      path.join('C:/tmp/mbox-to-pdf/output', desc.subdir))
+      path.join('C:/tmp/mbox-to-pdf/output', desc.subdir, desc.name))
   }
 })
 
