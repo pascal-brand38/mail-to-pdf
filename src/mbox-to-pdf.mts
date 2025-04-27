@@ -96,6 +96,12 @@ function getHeader(parser: ParsedMail): Header {
     header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
   }
   header.basename = fixFilename(header.basename)
+
+  // rm '.' if last char as not ok on directory of windows
+  if (header.basename.endsWith('.')) {
+    header.basename = header.basename.slice(0, -1)
+  }
+
   Object.keys(header).forEach(_key => {
     // cf. https://stackoverflow.com/questions/55012174/why-doesnt-object-keys-return-a-keyof-type-in-typescript
     const key = _key as keyof typeof header;
