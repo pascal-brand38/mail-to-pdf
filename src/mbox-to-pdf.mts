@@ -9,10 +9,9 @@ import * as path from 'path'
 // @ts-ignore
 import { mboxReader } from 'mbox-reader'  // scan messages
 
-import { simpleParser, ParsedMail, AddressObject } from 'mailparser' // parse a single message
+import { simpleParser, ParsedMail, AddressObject, HeaderValue } from 'mailparser' // parse a single message
 import puppeteer, { Browser } from "puppeteer"       // save html text as pdf
 import { PDFDocument } from 'pdf-lib'
-import { exit } from 'process'
 
 
 function escape(s: string): string {
@@ -36,6 +35,37 @@ function fixFilename(filename: string) {
   return  filename.replace(/[\:\\\/\*\?\"\<\>\|]/g, '').trim()
 }
 
+function getAddress(parser: ParsedMail, what: string): string {
+  let a: HeaderValue
+  const value = parser.headers.get(what)
+  if (value) {
+    // value is either an AddressObject, or an array of AddressObject (?)
+    let text: string = (value as AddressObject).text
+    if (text !== undefined) {
+      return text
+    } else {
+      // console.log(value)
+      const values = (value as [])
+      text = ''
+      values.forEach((v: any, index) => {
+        if (v.text === undefined) {
+          console.log(parser.headers)
+          console.log(what, ' ', values)
+          throw 'Internal Error - cannot recover'
+        }
+        if (index === 0) {
+          text = v.text
+        } else {
+          text = text + ', ' + v.text
+        }
+      })
+      return text
+    }
+  } else {
+    return ''
+  }
+}
+
 function getHeader(parser: ParsedMail): Header {
   const header = {
     from: '',
@@ -47,22 +77,11 @@ function getHeader(parser: ParsedMail): Header {
     basename: ''
   }
 
-  const from = parser.headers.get('from')
-  if (from) {
-    header.from = (from as AddressObject).text
-  }
-  const to = parser.headers.get('to')
-  if (to) {
-    header.to = (to as AddressObject).text
-  }
-  const cc = parser.headers.get('cc')
-  if (cc) {
-    header.cc = (cc as AddressObject).text
-  }
-  const bcc = parser.headers.get('bcc')
-  if (bcc) {
-    header.bcc = (bcc as AddressObject).text
-  }
+  header.from = getAddress(parser, 'from')
+  header.to = getAddress(parser, 'to')
+  header.cc = getAddress(parser, 'cc')
+  header.bcc = getAddress(parser, 'bcc')
+
   const date = parser.headers.get('date')
   if (date) {
     const d: Date = (date as Date)
@@ -77,6 +96,14 @@ function getHeader(parser: ParsedMail): Header {
     header.basename += ` - ${header.subject.replace(/[\:\\\/\*\?\"\<\>\|]/g, '')}`
   }
   header.basename = fixFilename(header.basename)
+  Object.keys(header).forEach(_key => {
+    // cf. https://stackoverflow.com/questions/55012174/why-doesnt-object-keys-return-a-keyof-type-in-typescript
+    const key = _key as keyof typeof header;
+    if (header[key]=== undefined) {
+      console.log('Erreur: header has some undefined: ', header)
+      console.log(parser.headers)
+    }
+  })
 
   return header
 }
@@ -169,6 +196,10 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
     extension = 'gif'
   } else if (contentType === 'text/calendar') {
     extension = 'ics'
+  } else if (contentType === 'application/octet-stream') {
+    extension = 'octet-stream'      // when the mime type is unknown
+                                    // may come from thunderbird
+                                    // cf. https://www.webmaster-hub.com/topic/57548-r%C3%A9solu-les-extensions-de-fichiers-joints-que-je-re%C3%A7ois-sous-thunderbird-sont-modifi%C3%A9es-et-deviennent-donc-illisibles/
   } else {
     extension = 'unknown'
     console.log('ERROR attachment without filename: ', header)
@@ -265,33 +296,19 @@ const allThunderbirdProfiles = getDirectories(thunderbirdProfileDir)
 
 console.log(allThunderbirdProfiles)
 
-allThunderbirdProfiles.map(async (profileDir) =>{
-  const imapMailPath = path.join(thunderbirdProfileDir, profileDir, 'ImapMail')
-  // console.log(imapMailPath, getDirectories(imapMailPath))
-  // console.log(imapMailPath, getMboxPaths(imapMailPath))
-
-  // getMboxPaths(imapMailPath).map(async (desc) => {
-  //   // console.log(
-  //   //   path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
-  //   //   path.join(imapMailPath, desc.subdir, desc.name))
-  //   await mboxToPdf(
-  //     path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
-  //     path.join(imapMailPath, desc.subdir, desc.name))
-  // })
-
-  for await (let desc of getMboxPaths(imapMailPath)) {
-    // await new Promise(r => setTimeout(r, 10 * 1000)),
-    // console.log(
-    //   path.join('C:/tmp/mbox-to-pdf/output', desc.subdir),
-    //   path.join(imapMailPath, desc.subdir, desc.name))
-    await mboxToPdf(
-      path.join(imapMailPath, desc.subdir, desc.name),
-      path.join('C:/tmp/mbox-to-pdf/output', desc.subdir, desc.name))
-  }
-})
-
-
-// await mboxToPdf('C:/tmp/mbox-to-pdf/INBOX', 'C:/tmp/mbox-to-pdf/output')
+if (true) {
+  allThunderbirdProfiles.map(async (profileDir) =>{
+    const imapMailPath = path.join(thunderbirdProfileDir, profileDir, 'ImapMail')
+    for await (let desc of getMboxPaths(imapMailPath)) {
+      await mboxToPdf(
+        path.join(imapMailPath, desc.subdir, desc.name),
+        path.join('C:/tmp/mbox-to-pdf/output', desc.subdir, desc.name))
+    }
+  })
+} else {
+  const mboxPath = ''
+  await mboxToPdf(mboxPath, 'C:/tmp/mbox-to-pdf/output')
+}
 
 console.log('DONE')
 
