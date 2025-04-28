@@ -196,6 +196,8 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
     extension = 'pdf'
   } else if (contentType === 'image/jpeg') {
     extension = 'jpg'
+  } else if (contentType === 'image/jpg') {
+    extension = 'jpg'
   } else if (contentType === 'image/png') {
     extension = 'png'
   } else if (contentType === 'image/gif') {
