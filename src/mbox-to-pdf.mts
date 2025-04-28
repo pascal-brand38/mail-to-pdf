@@ -189,25 +189,23 @@ function getHtml(parser: ParsedMail, header: Header): string {
 }
 
 function filenameFromContentType(contentType: string, index: number, header: Header) {
-  let extension = undefined
-  if (contentType === 'message/rfc822') {
-    extension = 'eml'
-  } else if (contentType === 'application/pdf') {
-    extension = 'pdf'
-  } else if (contentType === 'image/jpeg') {
-    extension = 'jpg'
-  } else if (contentType === 'image/jpg') {
-    extension = 'jpg'
-  } else if (contentType === 'image/png') {
-    extension = 'png'
-  } else if (contentType === 'image/gif') {
-    extension = 'gif'
-  } else if (contentType === 'text/calendar') {
-    extension = 'ics'
-  } else if (contentType === 'application/octet-stream') {
-    extension = 'octet-stream'      // when the mime type is unknown
-                                    // may come from thunderbird
-                                    // cf. https://www.webmaster-hub.com/topic/57548-r%C3%A9solu-les-extensions-de-fichiers-joints-que-je-re%C3%A7ois-sous-thunderbird-sont-modifi%C3%A9es-et-deviennent-donc-illisibles/
+  const contentTypeToExtension = [
+    { contentType: 'message/rfc822', extension: 'eml', },
+    { contentType: 'application/pdf', extension: 'pdf', },
+    { contentType: 'image/jpeg', extension: 'jpg', },
+    { contentType: 'image/jpg', extension: 'jpg', },
+    { contentType: 'image/png', extension: 'png', },
+    { contentType: 'image/gif', extension: 'gif', },
+    { contentType: 'text/calendar', extension: 'ics', },
+    // octet-stream when the mime type is unknown
+    // may come from the sender configuration
+    // cf. https://www.webmaster-hub.com/topic/57548-r%C3%A9solu-les-extensions-de-fichiers-joints-que-je-re%C3%A7ois-sous-thunderbird-sont-modifi%C3%A9es-et-deviennent-donc-illisibles/
+    { contentType: 'application/octet-stream', extension: 'octet-stream', },
+  ]
+  let extension
+  const c = contentTypeToExtension.filter(c => contentType === c.contentType)
+  if (c.length === 1) {
+    extension = c[0].extension
   } else {
     extension = 'unknown'
     console.log('ERROR attachment without filename: ', header)
