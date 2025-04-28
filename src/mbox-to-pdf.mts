@@ -303,14 +303,14 @@ const allThunderbirdProfiles = getDirectories(thunderbirdProfileDir)
 console.log(allThunderbirdProfiles)
 
 if (true) {
-  allThunderbirdProfiles.map(async (profileDir) =>{
+  for (let profileDir of allThunderbirdProfiles) {
     const imapMailPath = path.join(thunderbirdProfileDir, profileDir, 'ImapMail')
     for await (let desc of getMboxPaths(imapMailPath)) {
       await mboxToPdf(
         path.join(imapMailPath, desc.subdir, desc.name),
         path.join('C:/tmp/mbox-to-pdf/output', desc.subdir, desc.name))
     }
-  })
+  }
 } else {
   const mboxPath = ''
   await mboxToPdf(mboxPath, 'C:/tmp/mbox-to-pdf/output')
