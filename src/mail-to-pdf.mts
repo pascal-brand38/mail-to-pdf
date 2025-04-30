@@ -153,7 +153,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
   let html = ''
   html += `<div style="background-color:lightgrey;">`
   html += '<div><br></div>'
-  html += '<div><em>Generated using https://npmjs.com/package/mbox-to-pdf</em></div>'
+  html += '<div><em>Generated using https://npmjs.com/package/mail-to-pdf</em></div>'
   html += '<div><br></div>'
   html += `<div>From: ${escape(header.from)}</div>`
   html += `<div>To: ${escape(header.to)}</div>`
@@ -308,12 +308,12 @@ if (true) {
     for await (let desc of getMboxPaths(imapMailPath)) {
       await mboxToPdf(
         path.join(imapMailPath, desc.subdir, desc.name),
-        path.join('C:/tmp/mbox-to-pdf/output', desc.subdir, desc.name))
+        path.join('C:/tmp/mail-to-pdf/output', desc.subdir, desc.name))
     }
   }
 } else {
   const mboxPath = ''
-  await mboxToPdf(mboxPath, 'C:/tmp/mbox-to-pdf/output')
+  await mboxToPdf(mboxPath, 'C:/tmp/mail-to-pdf/output')
 }
 
 console.log('DONE')

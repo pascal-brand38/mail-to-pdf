@@ -1,5 +1,5 @@
 {
-  "name": "mbox-to-pdf",
+  "name": "mail-to-pdf",
   "version": "1.0.0",
   "description": "mbox to pdf, with attachments",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pascal-brand38/mbox-to-pdf.git"
+    "url": "git+https://github.com/pascal-brand38/mail-to-pdf.git"
   },
   "keywords": [
     "mbox"
@@ -17,9 +17,9 @@
   "author": "Pascal Brand",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pascal-brand38/mbox-to-pdf/issues"
+    "url": "https://github.com/pascal-brand38/mail-to-pdf/issues"
   },
-  "homepage": "https://github.com/pascal-brand38/mbox-to-pdf#readme",
+  "homepage": "https://github.com/pascal-brand38/mail-to-pdf#readme",
   "dependencies": {
     "mailparser": "^3.7.2",
     "mbox-reader": "^1.2.0",
