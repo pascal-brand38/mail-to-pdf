@@ -293,10 +293,11 @@ function getMboxPaths(root: string, subdir: string = '.') {
 }
 
 
-if (!process.env.APPDATA) {
+const appdata = process.env['APPDATA']
+if (!appdata) {
   throw '$APPDATA is not defined in the environment variables'
 }
-const thunderbirdProfileDir = path.join(process.env.APPDATA, 'Thunderbird', 'Profiles')
+const thunderbirdProfileDir = path.join(appdata, 'Thunderbird', 'Profiles')
 const allThunderbirdProfiles = getDirectories(thunderbirdProfileDir)
 
 console.log(allThunderbirdProfiles)
