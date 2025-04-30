@@ -32,11 +32,10 @@ interface Header  {
 }
 
 function fixFilename(filename: string) {
-  return  filename.replace(/[\:\\\/\*\?\"\<\>\|]/g, '').trim()
+  return filename.replace(/[\:\\\/\*\?\"\<\>\|]/g, '').trim()
 }
 
 function getAddress(parser: ParsedMail, what: string): string {
-  let a: HeaderValue
   const value = parser.headers.get(what)
   if (value) {
     // value is either an AddressObject, or an array of AddressObject (?)
@@ -229,12 +228,12 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
     const header = getHeader(parser)
 
     // console.log(parser)
+    // throw 'STOP'
 
     // console.log(`--- ${header.basename}`)
     process.stdout.write(`${" ".repeat(lenWhite)}\r`)
     lenWhite = 10 + header.basename.length
     process.stdout.write(`--- ${header.basename}\r`)
-
 
     const targetDir = path.join(outputDir, header.basename)
 
@@ -317,9 +316,3 @@ if (true) {
 }
 
 console.log('DONE')
-
-
-// TODO
-// - remove 'Important' which are not duplicate (in case they do not have labels)
-// - remove 'Tous les messages' which are not duplicate (in case they do not have labels)
-// - 'Tous les message' may have another name in other language
