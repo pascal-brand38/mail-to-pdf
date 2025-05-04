@@ -24,11 +24,13 @@
     "mailparser": "^3.7.2",
     "mbox-reader": "^1.2.0",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^24.7.0"
+    "puppeteer": "^24.7.0",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/mailparser": "^3.4.5",
     "@types/node": "^22.14.1",
+    "@types/yargs": "^17.0.33",
     "typescript": "^5.8.3"
   }
 }

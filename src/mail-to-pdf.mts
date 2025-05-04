@@ -13,6 +13,9 @@ import { simpleParser, ParsedMail, AddressObject, HeaderValue } from 'mailparser
 import puppeteer, { Browser } from "puppeteer"        // save html text as pdf
 import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer output size
 
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+
 
 function escape(s: string): string {
   return s.replace(
@@ -292,6 +295,29 @@ function getMboxPaths(root: string, subdir: string = '.') {
   return results
 }
 
+function getArgs(argv: string[]) {
+  let options = yargs(hideBin(argv))
+    .usage(`node dist/mail-to-pdf`)
+    .help('help').alias('help', 'h')
+    .version('version', '1.0').alias('version', 'V')
+    .demandCommand(0, 1)   // if 0, then the default xlsx file. Otherwise the xlsx filename
+    .options({
+      "output-dir": {
+        description: 'output directory of the pdf and attachment',
+        type: 'string',
+        default: 'C:/tmp/mail-to-pdf/output',
+      },
+    })
+    .check((argv: any) => {
+      return true;
+    })
+    .strict()   // raise an error if an option is unknown
+    .parseSync();
+
+  return options;
+}
+
+const options = getArgs(process.argv)
 
 const appdata = process.env['APPDATA']
 if (!appdata) {
@@ -308,7 +334,7 @@ if (true) {
     for await (let desc of getMboxPaths(imapMailPath)) {
       await mboxToPdf(
         path.join(imapMailPath, desc.subdir, desc.name),
-        path.join('C:/tmp/mail-to-pdf/output', desc.subdir, desc.name))
+        path.join(options.outputDir, desc.subdir, desc.name))
     }
   }
 } else {
