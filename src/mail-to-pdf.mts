@@ -10,8 +10,8 @@ import * as path from 'path'
 import { mboxReader } from 'mbox-reader'  // scan messages
 
 import { simpleParser, ParsedMail, AddressObject, HeaderValue } from 'mailparser' // parse a single message
-import puppeteer, { Browser } from "puppeteer"       // save html text as pdf
-import { PDFDocument } from 'pdf-lib'
+import puppeteer, { Browser } from "puppeteer"        // save html text as pdf
+import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer output size
 
 
 function escape(s: string): string {
@@ -151,8 +151,8 @@ function getHtml(parser: ParsedMail, header: Header): string {
   }
 
   let html = ''
-  html += `<div style="background-color:lightgrey;">`
-  html += '<div><br></div>'
+  html += `<div style="background-color:lightgrey; padding: 16px;">`
+  // html += '<div><br></div>'
   html += '<div><em>Generated using https://npmjs.com/package/mail-to-pdf</em></div>'
   html += '<div><br></div>'
   html += `<div>From: ${escape(header.from)}</div>`
@@ -161,7 +161,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
   html += `<div>Bcc: ${escape(header.bcc)}</div>`
   html += `<div>Subject: ${escape(header.subject)}</div>`
   html += `<div>Date: ${escape(header.date)}</div>`
-  html += '<div><br></div>'
+  // html += '<div><br></div>'
   html += `</div>`
   html += '<div><br></div>'
 
@@ -169,8 +169,8 @@ function getHtml(parser: ParsedMail, header: Header): string {
   html += '<div><br></div>'
 
   if (parser.attachments.length !== 0) {
-    html += `<div style="background-color:lightgrey;">`
-    html += '<div><br></div>'
+    html += `<div style="background-color:lightgrey; padding: 16px;">`
+    // html += '<div><br></div>'
     parser.attachments.forEach((attachment, index) => {
       html += `<div>`
       if (attachment.filename) {
@@ -181,7 +181,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
       html += ` ${beautifulSize(attachment.content.length)}`
       html += `</div>`
     })
-    html += '<div><br></div>'
+    // html += '<div><br></div>'
     html += `</div>`
   }
   return html
