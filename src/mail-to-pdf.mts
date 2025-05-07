@@ -121,7 +121,7 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
   const page = await browser.newPage();
-  await page.setContent(getHtml(parser, header));   //set the HTML of this page
+  await page.setContent(getHtml(parser, header), { timeout: 60*10*1000});   //set the HTML of this page, with a 10mn timeout instead of 30sec.
   await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
 
   let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
@@ -295,6 +295,7 @@ function getMboxPaths(root: string, subdir: string = '.') {
   return results
 }
 
+//TODO: no args without options
 function getArgs(argv: string[]) {
   let options = yargs(hideBin(argv))
     .usage(`node dist/mail-to-pdf`)
