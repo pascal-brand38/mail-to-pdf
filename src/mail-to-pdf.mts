@@ -16,6 +16,11 @@ import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer 
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
+const _stats = {
+  nTotal: 0,            // total number of emails
+  nNew: 0,              // new emails that have been pdfed
+  nAttachement: 0,      // number of downloaded attachments - do not count skipped emails
+}
 
 function escape(s: string): string {
   return s.replace(
@@ -227,6 +232,7 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
   const browser = await puppeteer.launch();
 
   for await (let message of mboxReader(readStream)) {
+    _stats.nTotal++
     const parser = await simpleParser(message.content);
     const header = getHeader(parser)
 
@@ -235,8 +241,8 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
     // console.log(`--- ${header.basename}`)
     process.stdout.write(`${" ".repeat(lenWhite)}\r`)
-    lenWhite = 10 + header.basename.length
-    process.stdout.write(`--- ${header.basename}\r`)
+    lenWhite = 20 + header.basename.length
+    process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`)
 
     const targetDir = path.join(outputDir, header.basename)
 
@@ -256,8 +262,10 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
       }
       filename = fixFilename(filename)
       fs.writeFileSync(path.join(targetDir, filename), attachment.content)
+      _stats.nAttachement ++
     })
 
+    _stats.nNew ++
     await saveUsingPuppeteer(parser, header, targetDir, browser)
   }
 
@@ -343,4 +351,8 @@ if (true) {
   await mboxToPdf(mboxPath, 'C:/tmp/mail-to-pdf/output')
 }
 
+console.log()
+console.log(`Number of emails: ${_stats.nTotal}`)
+console.log(`Number of new emails: ${_stats.nNew}`)
+console.log(`Number of generated attachments: ${_stats.nAttachement}`)
 console.log('DONE')
