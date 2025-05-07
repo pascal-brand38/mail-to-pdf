@@ -105,7 +105,7 @@ function getHeader(parser: ParsedMail): Header {
   header.basename = fixFilename(header.basename)
 
   // rm '.' if last char as not ok on directory of windows
-  if (header.basename.endsWith('.')) {
+  while (header.basename.endsWith('.')) {
     header.basename = header.basename.slice(0, -1)
   }
 
