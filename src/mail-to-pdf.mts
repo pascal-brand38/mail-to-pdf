@@ -104,14 +104,14 @@ function getHeader(parser: ParsedMail): Header {
   }
   header.basename = fixFilename(header.basename)
 
-  // rm '.' if last char as not ok on directory of windows
-  while (header.basename.endsWith('.')) {
-    header.basename = header.basename.slice(0, -1)
-  }
-
   // basename should not be more than 80 char
   if (header.basename.length >= 80) {
     header.basename = header.basename.slice(0, 80)
+  }
+
+  // rm '.' if last char as not ok on directory of windows
+  while (header.basename.endsWith('.')) {
+    header.basename = header.basename.slice(0, -1)
   }
 
   Object.keys(header).forEach(_key => {
