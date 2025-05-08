@@ -131,7 +131,7 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
   const page = await browser.newPage();
-  await page.setContent(getHtml(parser, header), { timeout: 60*10*1000});   //set the HTML of this page, with a 10mn timeout instead of 30sec.
+  await page.setContent(getHtml(parser, header), { timeout: 60*30*1000});   //set the HTML of this page, with a 30mn timeout instead of 30sec.
   await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
 
   let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
@@ -236,8 +236,6 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser) {
   // throw 'STOP'
 
   // console.log(`--- ${header.basename}`)
-  const lenWhite = 80 + 20
-  process.stdout.write(`${" ".repeat(lenWhite)}\r`)
 
   const targetDir = path.join(outputDir, header.basename)
 
@@ -261,6 +259,8 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser) {
     await saveUsingPuppeteer(parser, header, targetDir, browser)
   }
 
+  const lenWhite = 80 + 20
+  process.stdout.write(`${" ".repeat(lenWhite)}\r`)
   process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`)
 }
 
