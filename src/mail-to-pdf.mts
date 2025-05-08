@@ -227,37 +227,24 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
   return `attachment-${index}.${extension}`
 }
 
-async function mboxToPdf(mboxPath: string, outputDir: string) {
-  let lenWhite = 3
-  console.log(`Processing mbox file: ${mboxPath}`)
-  console.log(`Creating outputs in: ${outputDir}`)
+async function mailToPdf(message: any, outputDir: string, browser: Browser) {
+  const parser = await simpleParser(message.content);
+  const header = getHeader(parser)
+  _stats.nTotal ++
 
-  const readStream = fs.createReadStream(mboxPath)
+  // console.log(parser)
+  // throw 'STOP'
 
-  const browser = await puppeteer.launch();
+  // console.log(`--- ${header.basename}`)
+  const lenWhite = 80 + 20
+  process.stdout.write(`${" ".repeat(lenWhite)}\r`)
 
-  for await (let message of mboxReader(readStream)) {
-    _stats.nTotal++
-    const parser = await simpleParser(message.content);
-    const header = getHeader(parser)
+  const targetDir = path.join(outputDir, header.basename)
 
-    // console.log(parser)
-    // throw 'STOP'
-
-    // console.log(`--- ${header.basename}`)
-    process.stdout.write(`${" ".repeat(lenWhite)}\r`)
-    lenWhite = 20 + header.basename.length
-    process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`)
-
-    const targetDir = path.join(outputDir, header.basename)
-
-    // check if it already exists. If so, do not regenerate anything
-    // TODO: --force option
-    const pdfFullName = path.join(targetDir, header.basename+'.pdf')
-    if (fs.existsSync(pdfFullName)) {
-      continue
-    }
-
+  // check if it already exists. If so, do not regenerate anything
+  // TODO: --force option
+  const pdfFullName = path.join(targetDir, header.basename+'.pdf')
+  if (!fs.existsSync(pdfFullName)) {
     fs.mkdirSync(targetDir, { recursive: true });
 
     parser.attachments.forEach((attachment, index) => {
@@ -272,6 +259,30 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
     _stats.nNew ++
     await saveUsingPuppeteer(parser, header, targetDir, browser)
+  }
+
+  process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`)
+}
+
+async function mboxToPdf(mboxPath: string, outputDir: string) {
+  console.log(`Processing mbox file: ${mboxPath}`)
+  console.log(`Creating outputs in: ${outputDir}`)
+
+  const readStream = fs.createReadStream(mboxPath)
+
+  const browser = await puppeteer.launch();
+
+  let promises = []
+  const parallel = true
+  if (parallel) {
+    for await (let message of mboxReader(readStream)) {
+      promises.push(mailToPdf(message, outputDir, browser))
+    }
+    await Promise.all(promises)
+  } else {
+    for await (let message of mboxReader(readStream)) {
+      await mailToPdf(message, outputDir, browser)
+    }
   }
 
   await browser.close();
