@@ -127,17 +127,31 @@ function getHeader(parser: ParsedMail): Header {
 }
 
 
-async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser) {
-  const pdfFullName = path.join(targetDir, header.basename+'.pdf')
+async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir: string, browser: Browser, nTry: number = 0) {
+  try {
+    const pdfFullName = path.join(targetDir, header.basename+'.pdf')
 
-  const page = await browser.newPage();
-  await page.setContent(getHtml(parser, header), { timeout: 60*30*1000});   //set the HTML of this page, with a 30mn timeout instead of 30sec.
-  await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(60*30*1000);
+    await page.setContent(getHtml(parser, header), { timeout: 60*30*1000});   //set the HTML of this page, with a 30mn timeout instead of 30sec.
+    await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
 
-  let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
-  const pdfBuf = await pdf.save()
-  await page.close()
-  fs.writeFileSync(pdfFullName, pdfBuf);
+    let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
+    const pdfBuf = await pdf.save()
+    await page.close()
+    fs.writeFileSync(pdfFullName, pdfBuf);
+  } catch {
+    console.log()
+    console.log(`ERROR: puppeteer raised an error on ${header.basename}...`)
+    if (nTry <= 2) {
+      console.log('... Retrying ...')
+      console.log()
+      await saveUsingPuppeteer(parser, header, targetDir, browser, nTry+1)
+    } else {
+      console.log('STOP')
+      console.log()
+    }
+  }
 }
 
 function beautifulSize(s: number) {
