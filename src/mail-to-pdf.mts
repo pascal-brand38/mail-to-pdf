@@ -288,8 +288,7 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
   const browser = await puppeteer.launch();
 
-  const parallel = true
-  if (parallel) {
+  if (options.parallel) {
     let promises = []
     const limit = pLimit(5);      // max of 5 emails in parallel
     for await (let message of mboxReader(readStream)) {
@@ -342,12 +341,17 @@ function getArgs(argv: string[]) {
     .usage(`node dist/mail-to-pdf`)
     .help('help').alias('help', 'h')
     .version('version', '1.0').alias('version', 'V')
-    .demandCommand(0, 1)   // if 0, then the default xlsx file. Otherwise the xlsx filename
+    .demandCommand(0, 0)   // no argument without options
     .options({
       "output-dir": {
         description: 'output directory of the pdf and attachment',
         type: 'string',
         default: 'C:/tmp/mail-to-pdf/output',
+      },
+      "parallel": {
+        description: 'Use --no-parallel to run sequentially',
+        type: 'boolean',
+        default: true,
       },
     })
     .check((argv: any) => {
