@@ -137,10 +137,10 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
     page.setDefaultNavigationTimeout(60*30*1000);
     await page.setContent(getHtml(parser, header), { timeout: 60*30*1000});   //set the HTML of this page, with a 30mn timeout instead of 30sec.
     await page.pdf({ path: pdfFullName, printBackground: true });   // save the page
+    await page.close()
 
     let pdf = await PDFDocument.load(fs.readFileSync(pdfFullName))
     const pdfBuf = await pdf.save()
-    await page.close()
     fs.writeFileSync(pdfFullName, pdfBuf);
   } catch {
     console.log()
@@ -256,9 +256,8 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser) {
   const targetDir = path.join(outputDir, header.basename)
 
   // check if it already exists. If so, do not regenerate anything
-  // TODO: --force option
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
-  if (!fs.existsSync(pdfFullName)) {
+  if (options.force || !fs.existsSync(pdfFullName)) {
     fs.mkdirSync(targetDir, { recursive: true });
 
     parser.attachments.forEach((attachment, index) => {
@@ -352,6 +351,11 @@ function getArgs(argv: string[]) {
         description: 'Use --no-parallel to run sequentially',
         type: 'boolean',
         default: true,
+      },
+      "force": {
+        description: 'Force creation of the pdf, even if already exists',
+        type: 'boolean',
+        default: false,
       },
     })
     .check((argv: any) => {
