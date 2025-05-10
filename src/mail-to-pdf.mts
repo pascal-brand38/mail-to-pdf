@@ -13,6 +13,8 @@ import { simpleParser, ParsedMail, AddressObject, HeaderValue } from 'mailparser
 import puppeteer, { Browser } from "puppeteer"        // save html text as pdf
 import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer output size
 
+import pLimit from 'p-limit'                          // limit the number of processed emails in parallel
+
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
@@ -286,11 +288,12 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
 
   const browser = await puppeteer.launch();
 
-  let promises = []
   const parallel = true
   if (parallel) {
+    let promises = []
+    const limit = pLimit(5);      // max of 5 emails in parallel
     for await (let message of mboxReader(readStream)) {
-      promises.push(mailToPdf(message, outputDir, browser))
+      promises.push(limit(() => mailToPdf(message, outputDir, browser)))
     }
     await Promise.all(promises)
   } else {
