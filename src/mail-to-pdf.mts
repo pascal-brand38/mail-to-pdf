@@ -18,10 +18,24 @@ import pLimit from 'p-limit'                          // limit the number of pro
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
-const _stats = {
+interface statsType {
+  nTotal: number,
+  nNew: number,
+  nAttachement: number,
+  duplicate: {
+    self:  {
+      [key:string]: number
+    }
+  }
+
+}
+const _stats: statsType = {
   nTotal: 0,            // total number of emails
   nNew: 0,              // new emails that have been pdfed
   nAttachement: 0,      // number of downloaded attachments - do not count skipped emails
+  duplicate: {
+    self: { },
+  }
 }
 
 function escape(s: string): string {
@@ -243,7 +257,10 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
   return `attachment-${index}.${extension}`
 }
 
-async function mailToPdf(message: any, outputDir: string, browser: Browser) {
+// each key is the basename of the email, and its value is the mbox
+const _treatedEmails: any = {}
+
+async function mailToPdf(message: any, outputDir: string, browser: Browser, mboxPath: string) {
   const parser = await simpleParser(message.content);
   const header = getHeader(parser)
   _stats.nTotal ++
@@ -254,6 +271,16 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser) {
   // console.log(`--- ${header.basename}`)
 
   const targetDir = path.join(outputDir, header.basename)
+
+  // check duplicated emails
+  if (_treatedEmails[targetDir]) {
+    if (_stats.duplicate.self[mboxPath] === undefined) {
+      _stats.duplicate.self[mboxPath] = 0
+    }
+    _stats.duplicate.self[mboxPath] ++
+  } else {
+    _treatedEmails[targetDir] = true
+  }
 
   // check if it already exists. If so, do not regenerate anything
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
@@ -291,12 +318,12 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
     let promises = []
     const limit = pLimit(5);      // max of 5 emails in parallel
     for await (let message of mboxReader(readStream)) {
-      promises.push(limit(() => mailToPdf(message, outputDir, browser)))
+      promises.push(limit(() => mailToPdf(message, outputDir, browser, mboxPath)))
     }
     await Promise.all(promises)
   } else {
     for await (let message of mboxReader(readStream)) {
-      await mailToPdf(message, outputDir, browser)
+      await mailToPdf(message, outputDir, browser, mboxPath)
     }
   }
 
@@ -396,4 +423,11 @@ console.log()
 console.log(`Number of emails: ${_stats.nTotal}`)
 console.log(`Number of new emails: ${_stats.nNew}`)
 console.log(`Number of generated attachments: ${_stats.nAttachement}`)
+const keysDup = Object.keys(_stats.duplicate.self)
+if (keysDup.length === 0) {
+  console.log('mbox that contain duplication: NONE')
+} else {
+  console.log(`mbox that contain duplication:`)
+  keysDup.forEach(key => console.log(`  - ${key}: ${_stats.duplicate.self[key]}`))
+}
 console.log('DONE')
