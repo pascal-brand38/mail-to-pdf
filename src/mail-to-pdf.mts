@@ -24,10 +24,9 @@ interface statsType {
   nAttachement: number,
   duplicate: {
     self:  {
-      [key:string]: number
+      [key:string]: string[]
     }
   }
-
 }
 const _stats: statsType = {
   nTotal: 0,            // total number of emails
@@ -275,9 +274,9 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
   // check duplicated emails
   if (_treatedEmails[targetDir]) {
     if (_stats.duplicate.self[mboxPath] === undefined) {
-      _stats.duplicate.self[mboxPath] = 0
+      _stats.duplicate.self[mboxPath] = []
     }
-    _stats.duplicate.self[mboxPath] ++
+    _stats.duplicate.self[mboxPath].push(header.basename)
   } else {
     _treatedEmails[targetDir] = true
   }
@@ -428,6 +427,11 @@ if (keysDup.length === 0) {
   console.log('mbox that contain duplication: NONE')
 } else {
   console.log(`mbox that contain duplication:`)
-  keysDup.forEach(key => console.log(`  - ${key}: ${_stats.duplicate.self[key]}`))
+  keysDup.forEach(key => {
+    console.log(`  - ${key}: ${_stats.duplicate.self[key].length}`)
+    if (_stats.duplicate.self[key].length < 10) {
+      _stats.duplicate.self[key].forEach(value => console.log(`       ${value}`))
+    }
+  })
 }
 console.log('DONE')
