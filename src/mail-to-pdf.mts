@@ -257,7 +257,15 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
 }
 
 // each key is the basename of the email, and its value is the mbox
-const _treatedEmails: any = {}
+interface treatedEmailsType {
+  targetDir: { [key:string]: boolean },
+  basename:  { [key:string]: string[] },
+}
+
+const _treatedEmails: treatedEmailsType = {
+  targetDir: {},
+  basename: {},
+}
 
 async function mailToPdf(message: any, outputDir: string, browser: Browser, mboxPath: string) {
   const parser = await simpleParser(message.content);
@@ -272,14 +280,18 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
   const targetDir = path.join(outputDir, header.basename)
 
   // check duplicated emails
-  if (_treatedEmails[targetDir]) {
+  if (_treatedEmails.targetDir[targetDir]) {
     if (_stats.duplicate.self[mboxPath] === undefined) {
       _stats.duplicate.self[mboxPath] = []
     }
     _stats.duplicate.self[mboxPath].push(header.basename)
   } else {
-    _treatedEmails[targetDir] = true
+    _treatedEmails.targetDir[targetDir] = true
   }
+  if (_treatedEmails.basename[header.basename] === undefined) {
+    _treatedEmails.basename[header.basename] = []
+  }
+  _treatedEmails.basename[header.basename].push(targetDir)
 
   // check if it already exists. If so, do not regenerate anything
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
@@ -434,4 +446,15 @@ if (keysDup.length === 0) {
     }
   })
 }
+
+let nDup = 0
+Object.keys(_treatedEmails.basename).forEach(basename => {
+  if (_treatedEmails.basename[basename].length >= 2) {
+    nDup += (_treatedEmails.basename[basename].length - 1)
+    console.log(`Duplicate email:`)
+    _treatedEmails.basename[basename].forEach(l => console.log(`    ${l}`))
+  }
+})
+console.log(`Number of duplicated emails: ${nDup}`)
+
 console.log('DONE')
