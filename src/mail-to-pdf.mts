@@ -15,7 +15,7 @@ import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer 
 
 import pLimit from 'p-limit'                          // limit the number of processed emails in parallel
 
-import yargs from 'yargs'
+import yargs, { option } from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 interface statsType {
@@ -304,12 +304,16 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
         filename = filenameFromContentType(attachment.contentType, index, header)
       }
       filename = fixFilename(filename)
-      fs.writeFileSync(path.join(targetDir, filename), attachment.content)
+      if (!options.dryrun) {
+        fs.writeFileSync(path.join(targetDir, filename), attachment.content)
+      }
       _stats.nAttachement ++
     })
 
     _stats.nNew ++
-    await saveUsingPuppeteer(parser, header, targetDir, browser)
+    if (!options.dryrun) {
+      await saveUsingPuppeteer(parser, header, targetDir, browser)
+    }
   }
 
   const lenWhite = 80 + 20
@@ -392,6 +396,11 @@ function getArgs(argv: string[]) {
       },
       "force": {
         description: 'Force creation of the pdf, even if already exists',
+        type: 'boolean',
+        default: false,
+      },
+      "dryrun": {
+        description: 'dryrun - nothing is generated',
         type: 'boolean',
         default: false,
       },
