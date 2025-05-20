@@ -322,8 +322,14 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
 }
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
-  console.log(`Processing mbox file: ${mboxPath}`)
-  console.log(`Creating outputs in: ${outputDir}`)
+  let displayedMessage = false
+  function displayMessage() {
+    if (!displayedMessage) {
+      console.log(`Processing mbox file: ${mboxPath}`)
+      console.log(`Creating outputs in: ${outputDir}`)
+      displayedMessage = true
+    }
+  }
 
   const readStream = fs.createReadStream(mboxPath)
 
@@ -333,11 +339,13 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
     let promises = []
     const limit = pLimit(5);      // max of 5 emails in parallel
     for await (let message of mboxReader(readStream)) {
+      displayMessage()
       promises.push(limit(() => mailToPdf(message, outputDir, browser, mboxPath)))
     }
     await Promise.all(promises)
   } else {
     for await (let message of mboxReader(readStream)) {
+      displayMessage()
       await mailToPdf(message, outputDir, browser, mboxPath)
     }
   }
@@ -365,9 +373,7 @@ function getMboxPaths(root: string, subdir: string = '.') {
       if (c.isDirectory()) {
         results = [ ...results, ...getMboxPaths(root, path.join(subdir, c.name))]
       } else if (c.isFile()) {
-        if (!c.name.endsWith('.msf')) {
-          results.push({name: c.name, subdir: subdir})
-        }
+        results.push({name: c.name, subdir: subdir})
       }
     })
   } catch {
@@ -376,7 +382,6 @@ function getMboxPaths(root: string, subdir: string = '.') {
   return results
 }
 
-//TODO: no args without options
 function getArgs(argv: string[]) {
   let options = yargs(hideBin(argv))
     .usage(`node dist/mail-to-pdf`)
