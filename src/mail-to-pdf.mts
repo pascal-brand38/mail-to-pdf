@@ -15,7 +15,7 @@ import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer 
 
 import pLimit from 'p-limit'                          // limit the number of processed emails in parallel
 
-import yargs, { option } from 'yargs'
+import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 
 interface statsType {
@@ -363,21 +363,26 @@ function getDirectories(source: string) {
   }
 }
 
-interface mboxDesc { name: string, subdir: string}
-function getMboxPaths(root: string, subdir: string = '.') {
+interface mboxDesc { fullInputPath: string, fullOutputPath: string }
+function getMboxPaths(input: string, outputDir: string) {
   let results: mboxDesc[] = []
-  const dir = path.join(root, subdir)
-  try {
-    const contents = fs.readdirSync(dir, { withFileTypes: true })
-    contents.forEach(c => {
-      if (c.isDirectory()) {
-        results = [ ...results, ...getMboxPaths(root, path.join(subdir, c.name))]
-      } else if (c.isFile()) {
-        results.push({name: c.name, subdir: subdir})
-      }
-    })
-  } catch {
-    return []
+
+  const stat = fs.statSync(input)
+  if (stat.isFile()) {
+    results.push({fullInputPath: input, fullOutputPath: outputDir})
+  } else {
+    try {
+      const contents = fs.readdirSync(input, { withFileTypes: true })
+      contents.forEach(c => {
+        if (c.isDirectory()) {
+          results = [ ...results, ...getMboxPaths(path.join(input, c.name), path.join(outputDir, c.name))]
+        } else if (c.isFile()) {
+          results.push({fullInputPath: path.join(input, c.name), fullOutputPath: path.join(outputDir, c.name)})
+        }
+      })
+    } catch {
+      return []
+    }
   }
   return results
 }
@@ -389,6 +394,10 @@ function getArgs(argv: string[]) {
     .version('version', '1.0').alias('version', 'V')
     .demandCommand(0, 0)   // no argument without options
     .options({
+      "input": {
+        description: 'input, either a directory or a mbox file',
+        type: 'string',
+      },
       "output-dir": {
         description: 'output directory of the pdf and attachment',
         type: 'string',
@@ -420,23 +429,28 @@ function getArgs(argv: string[]) {
 }
 
 const options = getArgs(process.argv)
+let inputs: string[] = []
 
-const appdata = process.env['APPDATA']
-if (!appdata) {
-  throw '$APPDATA is not defined in the environment variables'
+if (options.input === undefined) {
+  // thunderbird on windows is used by default
+  const appdata = process.env['APPDATA']
+  if (!appdata) {
+    throw '$APPDATA is not defined in the environment variables'
+  }
+  const thunderbirdProfileDir = path.join(appdata, 'Thunderbird', 'Profiles')
+  inputs = getDirectories(thunderbirdProfileDir).map(dir => path.join(thunderbirdProfileDir, dir, 'ImapMail'))
+} else {
+  inputs = [ options.input ]
 }
-const thunderbirdProfileDir = path.join(appdata, 'Thunderbird', 'Profiles')
-const allThunderbirdProfiles = getDirectories(thunderbirdProfileDir)
 
-console.log(allThunderbirdProfiles)
+console.log(inputs)
 
 if (true) {
-  for (let profileDir of allThunderbirdProfiles) {
-    const imapMailPath = path.join(thunderbirdProfileDir, profileDir, 'ImapMail')
-    for await (let desc of getMboxPaths(imapMailPath)) {
-      await mboxToPdf(
-        path.join(imapMailPath, desc.subdir, desc.name),
-        path.join(options.outputDir, desc.subdir, desc.name))
+  for (let input of inputs) {
+    for await (let desc of getMboxPaths(input, options.outputDir)) {
+      console.log(desc.fullInputPath)
+      console.log(desc.fullOutputPath)
+      await mboxToPdf(desc.fullInputPath, desc.fullOutputPath)
     }
   }
 } else {
