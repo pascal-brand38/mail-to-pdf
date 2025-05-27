@@ -54,5 +54,6 @@ git clone git@github.com:pascal-brand38/mail-to-pdf.git
 cd mail-to-pdf
 npm install
 npm run build
+npm install -g .
 node dist/mail-to-pdf.mjs --help
 ```
