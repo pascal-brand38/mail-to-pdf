@@ -19,6 +19,10 @@
       "default": "./dist/mail-to-pdf.mjs"
     }
   },
+  "files": [
+    "dist", "LICENSE", "README.md"
+  ],
+
 
   "repository": {
     "type": "git",
