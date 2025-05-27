@@ -9,6 +9,13 @@ including the attachments.
 </div>
 <br>
 
+[![NPM Version](https://img.shields.io/npm/v/mail-to-pdf.svg)](https://npmjs.com/package/mail-to-pdf)
+[![NPM Downloads](https://img.shields.io/npm/dm/mail-to-pdf.svg)](https://npmjs.com/package/mail-to-pdf)
+[![NPM Type Definitions](https://img.shields.io/npm/types/mail-to-pdf)](https://npmjs.com/package/mail-to-pdf)
+[![NPM Last Update](https://img.shields.io/npm/last-update/mail-to-pdf)](https://npmjs.com/package/mail-to-pdf)
+
+<br>
+
 ## Introduction
 
 ```mail-to-pdf``` is aimed at saving emails (as mbox files) in pdf, including the attachments.
