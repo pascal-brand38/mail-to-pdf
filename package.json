@@ -10,6 +10,16 @@
   "bin": {
     "mail-to-pdf": "dist/mail-to-pdf.mjs"
   },
+
+  "exports": {
+    ".": {
+      "types": [
+        "./dist/mail-to-pdf.d.mts"
+      ],
+      "default": "./dist/mail-to-pdf.mjs"
+    }
+  },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pascal-brand38/mail-to-pdf.git"
