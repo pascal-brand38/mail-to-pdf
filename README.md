@@ -3,9 +3,9 @@
 
 <div align="center" style="font-size: 32px; font-weight: 700;">
 <br>
-Save emails in pdf
-<br>
-including the attachments.
+Save emails in pdf <br> including the attachments.
+<br> <br>
+Convenient for mbox (possibly recursive), <br> and thunderbird.
 </div>
 <br>
 

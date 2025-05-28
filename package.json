@@ -1,7 +1,7 @@
 {
   "name": "mail-to-pdf",
-  "version": "1.0.0",
-  "description": "mbox to pdf, with attachments",
+  "version": "1.0.3",
+  "description": "Save emails in pdf, including attachments - Convenient for mbox (possibly recursive), and thunderbird.",
   "main": "index.js",
   "scripts": {
     "build": "tsc --build tsconfig.json",
