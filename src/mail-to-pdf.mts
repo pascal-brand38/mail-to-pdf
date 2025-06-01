@@ -365,13 +365,13 @@ function getDirectories(source: string) {
 
 interface mboxDesc { fullInputPath: string, fullOutputPath: string }
 function getMboxPaths(input: string, outputDir: string) {
-  let results: mboxDesc[] = []
+  try {
+    let results: mboxDesc[] = []
 
-  const stat = fs.statSync(input)
-  if (stat.isFile()) {
-    results.push({fullInputPath: input, fullOutputPath: outputDir})
-  } else {
-    try {
+    const stat = fs.statSync(input)
+    if (stat.isFile()) {
+      results.push({fullInputPath: input, fullOutputPath: outputDir})
+    } else {
       const contents = fs.readdirSync(input, { withFileTypes: true })
       contents.forEach(c => {
         if (c.isDirectory()) {
@@ -380,11 +380,11 @@ function getMboxPaths(input: string, outputDir: string) {
           results.push({fullInputPath: path.join(input, c.name), fullOutputPath: path.join(outputDir, c.name)})
         }
       })
-    } catch {
-      return []
     }
+    return results
+  } catch {
+    return []
   }
-  return results
 }
 
 function getArgs(argv: string[]) {
