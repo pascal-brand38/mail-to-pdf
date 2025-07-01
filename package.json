@@ -1,6 +1,6 @@
 {
   "name": "mail-to-pdf",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Save emails in pdf, including attachments - Convenient for mbox (possibly recursive), and thunderbird.",
   "main": "index.js",
   "scripts": {
