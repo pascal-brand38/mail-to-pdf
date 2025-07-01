@@ -10,7 +10,6 @@
   "bin": {
     "mail-to-pdf": "dist/mail-to-pdf.mjs"
   },
-
   "exports": {
     ".": {
       "types": [
@@ -20,10 +19,10 @@
     }
   },
   "files": [
-    "dist", "LICENSE", "README.md"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
-
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pascal-brand38/mail-to-pdf.git"
@@ -38,17 +37,16 @@
   },
   "homepage": "https://github.com/pascal-brand38/mail-to-pdf#readme",
   "dependencies": {
+    "commander": "^14.0.0",
     "mailparser": "^3.7.2",
     "mbox-reader": "^1.2.0",
     "p-limit": "^6.2.0",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^24.7.0",
-    "yargs": "^17.7.2"
+    "puppeteer": "^24.7.0"
   },
   "devDependencies": {
     "@types/mailparser": "^3.4.5",
     "@types/node": "^22.14.1",
-    "@types/yargs": "^17.0.33",
     "typescript": "^5.8.3"
   }
 }

@@ -15,8 +15,7 @@ import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer 
 
 import pLimit from 'p-limit'                          // limit the number of processed emails in parallel
 
-import yargs from 'yargs'
-import { hideBin } from 'yargs/helpers'
+import { program } from 'commander'
 
 interface statsType {
   nTotal: number,
@@ -387,51 +386,47 @@ function getMboxPaths(input: string, outputDir: string) {
   }
 }
 
-function getArgs(argv: string[]) {
-  let options = yargs(hideBin(argv))
-    .usage(`node dist/mail-to-pdf <options> --output-dir <dir>`)
-    .example('$0 --output-dir /tmp/test', 'save all emails of thunderbirds (windows) as pdf, along their attachments, in /tmp/test')
-    .example('$0 --input file.mbox --output-dir /tmp/test', 'save all emails of file.mbox as pdf, along their attachments, in /tmp/test')
-    .example('$0 --input directory --output-dir /tmp/test', 'save all emails in driectory (look for all mbox files recursively in this directory) as pdf, along their attachments, in /tmp/test')
-    .help('help').alias('help', 'h')
-    .version('version', '1.0').alias('version', 'V')
-    .demandCommand(0, 0)   // no argument without options
-    .options({
-      "input": {
-        description: 'input, either a directory or a mbox file',
-        type: 'string',
-      },
-      "output-dir": {
-        description: 'output directory of the pdf and attachment',
-        type: 'string',
-        required: true,
-      },
-      "parallel": {
-        description: 'Use --no-parallel to run sequentially',
-        type: 'boolean',
-        default: true,
-      },
-      "force": {
-        description: 'Force creation of the pdf, even if already exists',
-        type: 'boolean',
-        default: false,
-      },
-      "dryrun": {
-        description: 'dryrun - nothing is generated',
-        type: 'boolean',
-        default: false,
-      },
-    })
-    .check((argv: any) => {
-      return true;
-    })
-    .strict()   // raise an error if an option is unknown
-    .parseSync();
+function getArgs() {
+  program
+    .name('mail-to-pdf')
+    .version('1.0.0')   // TODO: use dynamic version from package.json
+    .usage('node dist/mail-to-pdf <options> --output-dir <dir>')
+    .description('Save emails as pdf, along with the attachment files')
+    .option(
+      '--input <dir|mbox>',
+      'input, either a directory or a mbox file. When not provided, is looking at thunderbird mbox files (working on windows only)'
+    )
+    .requiredOption(
+      '--output-dir <dir>',
+      'output directory of the pdf and attachments',
+    )
+    .option(
+      '--no-parallel',
+      'Use --no-parallel to run sequentially',
+      true
+    )
+    .option(
+      '--force',
+      'Force creation of the pdf, even if already exists',
+      false,
+    )
+    .option(
+      '--dryrun --dry-run',
+      'dryrun - nothing is generated',
+      false,
+    ),
 
-  return options;
+
+  program.parse()
+
+  return program.opts()
+
+  // .example('$0 --output-dir /tmp/test', 'save all emails of thunderbirds (windows) as pdf, along their attachments, in /tmp/test')
+  // .example('$0 --input file.mbox --output-dir /tmp/test', 'save all emails of file.mbox as pdf, along their attachments, in /tmp/test')
+  // .example('$0 --input directory --output-dir /tmp/test', 'save all emails in driectory (look for all mbox files recursively in this directory) as pdf, along their attachments, in /tmp/test')
 }
 
-const options = getArgs(process.argv)
+const options = getArgs()
 let inputs: string[] = []
 
 if (options.input === undefined) {
@@ -445,8 +440,6 @@ if (options.input === undefined) {
 } else {
   inputs = [ options.input ]
 }
-
-console.log(inputs)
 
 if (true) {
   for (let input of inputs) {

@@ -22,8 +22,6 @@
     // "moduleResolution": "NodeNext",
     // "module": "NodeNext"
     "module": "ES2022",
-
-
   },
   "include": ["./src/**/*.mts"],
   "exclude": ["*.mjs" ]
