@@ -4,6 +4,7 @@
   "description": "Save emails in pdf, including attachments - Convenient for mbox (possibly recursive), and thunderbird.",
   "main": "index.js",
   "scripts": {
+    "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version)\" > src/version.mts",
     "build": "tsc --build tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

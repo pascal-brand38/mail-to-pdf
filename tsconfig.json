@@ -11,7 +11,7 @@
     "composite": false,
 
     // emit dist files
-    // "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": false,
     // "emitDeclarationOnly": false,
     "noEmit": false,
     "declaration": true,

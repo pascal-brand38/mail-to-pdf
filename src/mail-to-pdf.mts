@@ -16,6 +16,7 @@ import { PDFDocument } from 'pdf-lib'                 // optimize the puppeteer 
 import pLimit from 'p-limit'                          // limit the number of processed emails in parallel
 
 import { program } from 'commander'
+import { LIB_VERSION } from './version.mjs'
 
 interface statsType {
   nTotal: number,
@@ -389,7 +390,7 @@ function getMboxPaths(input: string, outputDir: string) {
 function getArgs() {
   program
     .name('mail-to-pdf')
-    .version('1.0.0')   // TODO: use dynamic version from package.json
+    .version(LIB_VERSION)   // TODO: use dynamic version from package.json
     .usage('node dist/mail-to-pdf <options> --output-dir <dir>')
     .description('Save emails as pdf, along with the attachment files')
     .option(
