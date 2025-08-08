@@ -18,6 +18,10 @@ import pLimit from 'p-limit'                          // limit the number of pro
 import { program } from 'commander'
 import { LIB_VERSION } from './version.mjs'
 
+// var colors = require('colors');
+import 'colors'
+
+
 interface statsType {
   nTotal: number,
   nNew: number,
@@ -133,7 +137,7 @@ function getHeader(parser: ParsedMail): Header {
     // cf. https://stackoverflow.com/questions/55012174/why-doesnt-object-keys-return-a-keyof-type-in-typescript
     const key = _key as keyof typeof header;
     if (header[key]=== undefined) {
-      console.log('Erreur: header has some undefined: ', header)
+      console.log('Erreur: header has some undefined: '.red, header)
       console.log(parser.headers)
     }
   })
@@ -157,13 +161,13 @@ async function saveUsingPuppeteer(parser: ParsedMail, header: Header, targetDir:
     fs.writeFileSync(pdfFullName, pdfBuf);
   } catch {
     console.log()
-    console.log(`ERROR: puppeteer raised an error on ${header.basename}...`)
+    console.log(`ERROR: puppeteer raised an error on ${header.basename}...`.red)
     if (nTry <= 2) {
-      console.log('... Retrying ...')
+      console.log('... Retrying ...'.yellow)
       console.log()
       await saveUsingPuppeteer(parser, header, targetDir, browser, nTry+1)
     } else {
-      console.log('STOP')
+      console.log('STOP'.red)
       console.log()
     }
   }
@@ -189,7 +193,7 @@ function getHtml(parser: ParsedMail, header: Header): string {
     bodyStr = `<div>${parser.text.replaceAll('\n', '<br>')}</div>`
   } else if (parser.textAsHtml) {
     bodyStr = parser.textAsHtml
-    console.log('ERROR - textAsHtml:', header)
+    console.log('ERROR - textAsHtml:'.red, header)
   }
 
   let html = ''
@@ -249,8 +253,8 @@ function filenameFromContentType(contentType: string, index: number, header: Hea
     extension = c[0].extension
   } else {
     extension = 'unknown'
-    console.log('ERROR attachment without filename: ', header)
-    console.log(`attachment.contentType = ${contentType}`)
+    console.log('ERROR attachment without filename: '.red, header)
+    console.log(`attachment.contentType = ${contentType}`.red)
   }
 
   return `attachment-${index}.${extension}`
@@ -317,16 +321,16 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
   }
 
   const lenWhite = 80 + 20
-  process.stdout.write(`${" ".repeat(lenWhite)}\r`)
-  process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`)
+  process.stdout.write(`${" ".repeat(lenWhite)}\r`.green)
+  process.stdout.write(`--- ${_stats.nNew}/${_stats.nTotal} ${header.basename}\r`.green)
 }
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
   let displayedMessage = false
   function displayMessage() {
     if (!displayedMessage) {
-      console.log(`Processing mbox file: ${mboxPath}`)
-      console.log(`Creating outputs in: ${outputDir}`)
+      console.log(`Processing mbox file: ${mboxPath}`.blue)
+      console.log(`Creating outputs in: ${outputDir}`.blue)
       displayedMessage = true
     }
   }
@@ -445,8 +449,8 @@ if (options.input === undefined) {
 if (true) {
   for (let input of inputs) {
     for await (let desc of getMboxPaths(input, options.outputDir)) {
-      console.log(desc.fullInputPath)
-      console.log(desc.fullOutputPath)
+      console.log(desc.fullInputPath.blue)
+      console.log(desc.fullOutputPath.blue)
       await mboxToPdf(desc.fullInputPath, desc.fullOutputPath)
     }
   }
@@ -456,18 +460,18 @@ if (true) {
 }
 
 console.log()
-console.log(`Number of emails: ${_stats.nTotal}`)
-console.log(`Number of new emails: ${_stats.nNew}`)
-console.log(`Number of generated attachments: ${_stats.nAttachement}`)
+console.log(`Number of emails: ${_stats.nTotal}`.green)
+console.log(`Number of new emails: ${_stats.nNew}`.green)
+console.log(`Number of generated attachments: ${_stats.nAttachement}`.green)
 const keysDup = Object.keys(_stats.duplicate.self)
 if (keysDup.length === 0) {
-  console.log('mbox that contain duplication: NONE')
+  console.log('mbox that contain duplication: NONE'.green)
 } else {
-  console.log(`mbox that contain duplication:`)
+  console.log(`mbox that contain duplication:`.green)
   keysDup.forEach(key => {
-    console.log(`  - ${key}: ${_stats.duplicate.self[key].length}`)
+    console.log(`  - ${key}: ${_stats.duplicate.self[key].length}`.blue)
     if (_stats.duplicate.self[key].length < 10) {
-      _stats.duplicate.self[key].forEach(value => console.log(`       ${value}`))
+      _stats.duplicate.self[key].forEach(value => console.log(`       ${value}`.blue))
     }
   })
 }
@@ -477,9 +481,9 @@ Object.keys(_treatedEmails.basename).forEach(basename => {
   if (_treatedEmails.basename[basename].length >= 2) {
     nDup += (_treatedEmails.basename[basename].length - 1)
     console.log(`Duplicate email:`)
-    _treatedEmails.basename[basename].forEach(l => console.log(`    ${l}`))
+    _treatedEmails.basename[basename].forEach(l => console.log(`    ${l}`.blue))
   }
 })
-console.log(`Number of duplicated emails: ${nDup}`)
+console.log(`Number of duplicated emails: ${nDup}`.green)
 
-console.log('DONE')
+console.log('DONE'.green)
