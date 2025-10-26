@@ -21,6 +21,12 @@ import { LIB_VERSION } from './version.mjs'
 // var colors = require('colors');
 import 'colors'
 
+const skipPaths = [
+  "[Gmail].sbd\\Important",
+  "[Gmail].sbd\\Suivis",
+  "[Gmail].sbd\\Tous les messages",
+  "[Gmail].sbd\\Corbeille",
+]
 
 interface statsType {
   nTotal: number,
@@ -300,7 +306,9 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
   // check if it already exists. If so, do not regenerate anything
   const pdfFullName = path.join(targetDir, header.basename+'.pdf')
   if (options.force || !fs.existsSync(pdfFullName)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+    if (!options.dryRun) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
 
     parser.attachments.forEach((attachment, index) => {
       let filename = attachment.filename
@@ -308,14 +316,14 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
         filename = filenameFromContentType(attachment.contentType, index, header)
       }
       filename = fixFilename(filename)
-      if (!options.dryrun) {
+      if (!options.dryRun) {
         fs.writeFileSync(path.join(targetDir, filename), attachment.content)
       }
       _stats.nAttachement ++
     })
 
     _stats.nNew ++
-    if (!options.dryrun) {
+    if (!options.dryRun) {
       await saveUsingPuppeteer(parser, header, targetDir, browser)
     }
   }
@@ -326,6 +334,11 @@ async function mailToPdf(message: any, outputDir: string, browser: Browser, mbox
 }
 
 async function mboxToPdf(mboxPath: string, outputDir: string) {
+  if (skipPaths.some(skipPath => mboxPath.endsWith(skipPath))) {
+    console.log(`Skip mbox file: ${mboxPath}`.yellow)
+    return
+  }
+
   let displayedMessage = false
   function displayMessage() {
     if (!displayedMessage) {
@@ -355,6 +368,7 @@ async function mboxToPdf(mboxPath: string, outputDir: string) {
   }
 
   await browser.close();
+  console.log()   // newline to see last log of this mbox path
 }
 
 function getDirectories(source: string) {
@@ -416,10 +430,16 @@ function getArgs() {
       false,
     )
     .option(
-      '--dryrun --dry-run',
+      '--dry-run',
       'dryrun - nothing is generated',
       false,
+    )
+    .option(
+      '--no-skip',
+      `Use --no-skip not to skip ${skipPaths}`,
+      true
     ),
+
 
 
   program.parse()
@@ -432,6 +452,7 @@ function getArgs() {
 }
 
 const options = getArgs()
+
 let inputs: string[] = []
 
 if (options.input === undefined) {
