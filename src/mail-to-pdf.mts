@@ -65,7 +65,7 @@ interface Header  {
 }
 
 function fixFilename(filename: string) {
-  return filename.replace(/[\:\\\/\*\?\"\<\>\|]/g, '').trim()
+  return filename.replace(/[\:\\\/\*\?\"\<\>\|\[\]\t]/g, '').trim()
 }
 
 function getAddress(parser: ParsedMail, what: string): string {
