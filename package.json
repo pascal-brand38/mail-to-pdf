@@ -39,16 +39,16 @@
   "homepage": "https://github.com/pascal-brand38/mail-to-pdf#readme",
   "dependencies": {
     "colors": "^1.4.0",
-    "commander": "^14.0.0",
+    "commander": "^14.0.3",
     "mailparser": "^3.9.3",
     "mbox-reader": "^1.2.0",
-    "p-limit": "^6.2.0",
+    "p-limit": "^7.3.0",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^24.11.1"
+    "puppeteer": "^24.37.5"
   },
   "devDependencies": {
-    "@types/mailparser": "^3.4.5",
-    "@types/node": "^22.14.1",
-    "typescript": "^5.8.3"
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^25.3.1",
+    "typescript": "^5.9.3"
   }
 }
